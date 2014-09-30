@@ -7,6 +7,23 @@ function init() {
 
   window.my_name = '';
 
+   var sel =  document.getElementById("selStatus");
+    var path = document.getElementById("imgStatus").src;
+   switch (path.substring(path.length - 9, path.length - 10)) {
+       case "n":
+           sel.selectedIndex = 0;
+           break;
+       case "w":
+           sel.selectedIndex = 1;
+           break;
+       case "d":
+           sel.selectedIndex = 2;
+           break;
+       case "y":
+           sel.selectedIndex = 3;
+           break;
+   }
+
   function updateParticipants(participants) {
     $('#participants_online').html('');
     $('#participants_offline').html('');
@@ -16,7 +33,10 @@ function init() {
     for (var sId in participants.online){
       userName = participants.online[sId].userName;
       if (map[userName] == undefined || map[userName] !== sessionId){
-        map[userName] = {sId:sId};
+        map[userName] = {
+            sId:sId,
+            userStatus:participants.online[sId].userStatus
+        };
       }
     }
     keys = Object.keys(map);
@@ -25,7 +45,23 @@ function init() {
     for (var i = 0; i < keys.length; i++) {
       var name = keys[i];
       var img_ele = '<img src="/img/photo4.png" height=40/>';
-      var photo_ele = '<div class="col-xs-3 col-sm-2 col-md-1 col-lg-1"><img src="/img/green-dot.png" height=10/><br/>'+img_ele + '</div>';
+      var img_status;
+
+      switch (parseInt(map[name].userStatus)) {
+          case 0:
+              img_status = "/img/green-dot.png";
+              break;
+          case 1:
+              img_status = "/img/yellow-dot.png";
+              break;
+          case 2:
+              img_status = "/img/red-dot.png";
+              break;
+          case 3:
+              img_status = "/img/grey-dot.png";
+              break;
+      }
+      var photo_ele = '<div class="col-xs-3 col-sm-2 col-md-1 col-lg-1"><img src=' + img_status + ' height=10/><br/>'+img_ele + '</div>';
       var name_ele = '<div class="col-xs-8 col-sm-9 col-md-10 col-lg-10"><strong>' + name + '</strong></div>';
       var dropdown_symbol = map[name].sId === sessionId ? '':'<i class="glyphicon glyphicon-chevron-down text-muted"></i>';
       var dropdown_ele = '<div class="col-xs-1 col-sm-1 col-md-1 col-lg-1 dropdown-user" data-for=".' + name + '">' + dropdown_symbol + '</div>';
@@ -40,9 +76,24 @@ function init() {
     }
 
     participants.all.forEach(function(userObj) {
+        var img_status;
       if (map[userObj.userName] == undefined) {
         var img_ele = '<img class="img-circle" src="/img/photo4.png" height=40/>';
-        var photo_ele = '<div class="offline col-xs-3 col-sm-2 col-md-1 col-lg-1"><img src="/img/grey-dot.png" height=10/><br/>'+img_ele + '</div>';
+          switch (parseInt(userObj.userStatus)) {
+              case 0:
+                  img_status = "/img/green-dot.png";
+                  break;
+              case 1:
+                  img_status = "/img/yellow-dot.png";
+                  break;
+              case 2:
+                  img_status = "/img/red-dot.png";
+                  break;
+              case 3:
+                  img_status = "/img/grey-dot.png";
+                  break;
+          }
+        var photo_ele = '<div class="offline col-xs-3 col-sm-2 col-md-1 col-lg-1"><img src=' + img_status + ' height=10/><br/>'+img_ele + '</div>';
         var name_ele = '<div class="offline col-xs-8 col-sm-9 col-md-10 col-lg-10"><strong>' + userObj.userName + '</strong><br/></div>';
         var dropdown_ele = '<div class="col-xs-1 col-sm-1 col-md-1 col-lg-1 dropdown-user" data-for=".' + userObj.userName + '"><i class="glyphicon glyphicon-chevron-down text-muted"></i></div>';
         var info_ele = '<div class="row user-row search_item">' + photo_ele + name_ele + dropdown_ele + '</div>';
@@ -70,8 +121,23 @@ function init() {
 
       var $form = $('form');
       $form.submit(function(){
+          var img_status;
           $.post($(this).attr('action'), $(this).serialize(), function(response){
-              document.getElementById("statusBar").innerHTML=$('input[name=status]:checked').val();
+              switch (parseInt(document.getElementById("selStatus").value)) {
+                  case 0:
+                      img_status = "/img/green-dot.png";
+                      break;
+                  case 1:
+                      img_status = "/img/yellow-dot.png";
+                      break;
+                  case 2:
+                      img_status = "/img/red-dot.png";
+                      break;
+                  case 3:
+                      img_status = "/img/grey-dot.png";
+                      break;
+              }
+              document.getElementById("imgStatus").src = img_status;
           },'json');
           return false;
       });
@@ -84,10 +150,7 @@ function init() {
       type: 'GET',
       dataType: 'json'
     }).done(function(data) {
-      var name = data.name;
-      my_name = data.name;
-
-      socket.emit('newUser', {id: sessionId, name: name});
+      socket.emit('newUser', {id: sessionId, name: data.name, status: data.status});
     });
   });
 
@@ -120,6 +183,10 @@ function init() {
           }
     })
   });
+
+    $('#selStatus').change(function() {
+        $(this).closest('form').trigger('submit');
+    });
 }
 
 $(document).on('ready', init);

@@ -18,8 +18,6 @@ Status.saveNewStatus = function(user_name, status_code, create_at, callback) {
         body : {userName: user_name, statusCode: status_code, createdAt: create_at},
         json : true
     }
-    console.log(options.body);
-    console.log("models/StatusRest.js saveNewStatus");
     request.post(options, function(err, res, body) {
         if (err) {
             callback(err, null);
@@ -29,7 +27,6 @@ Status.saveNewStatus = function(user_name, status_code, create_at, callback) {
             callback(res.body, null);
             return;
         }
-        console.log("Response from create status: " + res.body);
         var new_status = new Status(user_name, status_code);
         callback(null, new_status);
         return;

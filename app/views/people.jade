@@ -3,7 +3,7 @@ html
   include includes/head.jade
   script(src='/js/jquery.cookie.js')
   script(src='/js/people.js')
-  title SSNoC - People
+  title #{title}
   body
     include includes/navbar.jade
     div.container
@@ -12,23 +12,19 @@ html
       div.well#myself.search_item
         div.row.user-row
           div.col-xs-3.col-sm-2.col-md-1.col-lg-1
-            img(src="/img/green-dot.png" height=10)
+            img(id="imgStatus" src="#{user_status}" height=10)
             br
             img(src="/img/photo4.png" height=60)
           div.col-xs-8.col-sm-9.col-md-10.col-lg-10
             strong #{user_name}
-            p(id="statusBar") #{user_status}
             div.status
               form.form-status(action='/status', method='post')
                 div.form-group
-                  input.status.form-control(type="radio" class='form-control' name='status' value=0)
-                  label GREEN
-                  input.status.form-control(type="radio" class='form-control' name='status' value=1)
-                  label YELLOW
-                  input.status.form-control(type="radio" class='form-control' name='status' value=2)
-                  label RED
-                  input.status.form-control(type="radio" class='form-control' name='status' value=3 checked=true)
-                  label NULL
+                  select(id="selStatus" name='status' class="form-control")
+                    option(value=0) OK
+                    option(value=1) Help
+                    option(value=2) Emergency
+                    option(value=3 selected='selected') Undefined
                 button(type="submit", class='btn btn-info btn-lg' id="postStatusBtn") Post Status
       div.well#participants_online
       br
