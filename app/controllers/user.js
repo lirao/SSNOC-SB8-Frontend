@@ -1,4 +1,6 @@
 var User = require('../models/UserRest');
+var Status = require('../models/StatusRest');
+var dateFormat = require('dateformat');
 
 module.exports = function(_, io, participants, passport, refreshAllUsers) {
   return {
@@ -47,10 +49,17 @@ module.exports = function(_, io, participants, passport, refreshAllUsers) {
     postStatus : function(req, res) {
         console.log("post");
         var user_name = req.session.passport.user.user_name;
-        var user_status = req.body.status;
+        var user_status = parseInt(req.body.status);
         console.log(user_name);
         console.log(user_status);
-        res.json(200);
+        Status.saveNewStatus(user_name, user_status, dateFormat(new Date(), "yyyy-mm-dd HH:MM"), function(err, user) {
+            if (user !== null) {
+                res.json(200, {name:user.local.name});
+            }
+            console.log(err);
+        });
     }
+
+
   };
 };

@@ -92,8 +92,4 @@ User.saveNewUser = function(user_name, password, created_at, callback) {
   });
 };
 
-User.saveStatus = function(user_name, user_status, callback) {
-    console.log("save status");
-};
-
 module.exports = User;

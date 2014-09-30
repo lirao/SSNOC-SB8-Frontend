@@ -19,7 +19,7 @@ html
             strong #{user_name}
             p(id="statusBar") #{user_status}
             div.status
-              form.form-status(name='status' action='/status', method='post')
+              form.form-status(action='/status', method='post')
                 div.form-group
                   input.status.form-control(type="radio" class='form-control' name='status' value=0)
                   label GREEN
