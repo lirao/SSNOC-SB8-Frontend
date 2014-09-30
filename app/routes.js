@@ -20,6 +20,8 @@ module.exports = function(app, _, io, participants, passport) {
   }));
 
   app.get("/people", isLoggedIn, people_controller.getPeople);
+
+  app.get("/status", isLoggedIn, user_controller.postStatus);
 };
 
 function isLoggedIn(req, res, next) {

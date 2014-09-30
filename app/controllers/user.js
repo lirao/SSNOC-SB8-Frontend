@@ -1,4 +1,5 @@
 var User = require('../models/UserRest');
+var Status = require('../models/StatusRest');
 
 module.exports = function(_, io, participants, passport, refreshAllUsers) {
   return {
@@ -43,6 +44,19 @@ module.exports = function(_, io, participants, passport, refreshAllUsers) {
 
     getWelcome : function(req, res) {
       res.render('welcome', {title: "Hello " + req.session.passport.user.user_name + " !!"} );
+    },
+
+    postStatus : function(req, res, next) {
+        console.log("Posting status for " + req.session.passport.user.user_name);
+        user_name = req.session.passport.user.user_name;
+        Status.saveNewStatus(user_name, 0, "2014-09-09 09:30", function(err, user) {
+            if (user !== null) {
+                res.json(200, {name:user.local.name});
+            }
+            console.log("Error posting status: " + err);
+        });
     }
+
+
   };
 };
