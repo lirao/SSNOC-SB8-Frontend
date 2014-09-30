@@ -20,6 +20,8 @@ module.exports = function(app, _, io, participants, passport) {
   }));
 
   app.get("/people", isLoggedIn, people_controller.getPeople);
+
+  app.post("/status", isLoggedIn, user_controller.postStatus);
 };
 
 function isLoggedIn(req, res, next) {
@@ -33,7 +35,10 @@ function refreshAllUsers(participants, callback) {
   participants.all = [];
   User.getAllUsers(function(err, users) {
     users.forEach(function(user) {
-      participants.all.push({'userName' : user.local.name});
+      participants.all.push({
+          'userName' : user.local.name,
+          'userStatus' : user.local.status
+      });
     });
     callback();
   });

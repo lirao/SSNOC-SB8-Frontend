@@ -40,7 +40,10 @@ app.use(flash());
 User.getAllUsers(function(err, users) {
   if (!err) {
     users.forEach(function(user) {
-      participants.all.push({userName : user.local.name});
+      participants.all.push({
+          userName : user.local.name,
+          userStatus : user.local.status
+      });
     });
   }
 

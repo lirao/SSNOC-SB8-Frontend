@@ -2,10 +2,11 @@ var bcrypt = require('bcrypt-nodejs');
 var request = require('request');
 var rest_api = require('../../config/rest_api');
 
-function User(user_name, password){
+function User(user_name, password, user_status){
   this.local = {
     name : user_name,
-    password : password
+    password : password,
+    status: user_status
   };
 }
 
@@ -31,7 +32,7 @@ User.getUser = function(user_name, callback) {
       return;
     }
     if (res.statusCode === 200) {
-      var user = new User(body.userName, body.password);
+      var user = new User(body.userName, body.password, body.lastStatusCode);
       callback(null, user);
       return;
     }
@@ -43,17 +44,17 @@ User.getUser = function(user_name, callback) {
 };
 
 User.getAllUsers = function(callback) {
-  request(rest_api.get_all_users, {json:true}, function(err, res, body) {
-    if (err){
-      callback(err,null);
+  request(rest_api.get_all_users, {json : true}, function(err, res, body) {
+    if ( err ) {
+      callback(err, null);
       return;
     }
-    if (res.statusCode === 200) {
+    if ( res.statusCode === 200 ) {
       var users = body.map(function(item, idx, arr){
-        return new User(item.userName, item.password);
+        return new User(item.userName, item.password, item.lastStatusCode);
       });
 
-      users.sort(function(a,b) {
+      users.sort(function(a, b) {
         return a.userName > b.userName;
       });
 
@@ -61,17 +62,17 @@ User.getAllUsers = function(callback) {
       callback(null, users);
       return;
     }
-    if (res.statusCode !== 200) {
+    if ( res.statusCode !== 200 ) {
       callback(null, null);
       return;
     }
   });
 };
 
-User.saveNewUser = function(user_name, password, create_at, callback) {
+User.saveNewUser = function(user_name, password, created_at, callback) {
   var options = {
     url : rest_api.post_new_user,
-    body : {userName: user_name, password: password, createdAt: create_at},
+    body : {userName: user_name, password: password, createdAt: created_at},
     json: true
   };
 
@@ -89,6 +90,10 @@ User.saveNewUser = function(user_name, password, create_at, callback) {
     callback(null, new_user);
     return;
   });
+};
+
+User.saveStatus = function(user_name, user_status, callback) {
+    console.log("save status");
 };
 
 module.exports = User;

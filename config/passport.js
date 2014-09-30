@@ -1,15 +1,14 @@
 var LocalStrategy = require('passport-local').Strategy;
 var request = require('request');
 var User = require('../app/models/UserRest');
+var dateFormat = require('dateformat');
 
 module.exports = function(passport) {
   passport.serializeUser(function(user, done) {
-    console.log("config/passport.js serialize");
     done(null, {user_name: user.local.name});
   });
 
   passport.deserializeUser(function(user_info, done) {
-    console.log("config/passport.js deserialize");
     User.getUser(user_info.user_name, function(err, user) {
       done(err, user);
     });
@@ -21,10 +20,8 @@ module.exports = function(passport) {
     passReqToCallback : true
   },
   function(req, name, password, done) {
-    console.log("config/passport.js signup");
     process.nextTick(function() {
-      User.saveNewUser(name, password, "2009-09-09 09:00", function(err, new_user) {
-          console.log(new Date().toDateString()); //////////
+      User.saveNewUser(name, password, dateFormat(new Date(), "yyyy-mm-dd HH:MM"), function(err, new_user) {
         if (err)
           return done(null, false, req.flash('signupMessage', 'Signup failed due to: ' + err));
         return done(null, new_user);
@@ -36,7 +33,6 @@ module.exports = function(passport) {
     passwordField : 'password',
     passReqToCallback : true
   }, function(req, name, password, done) {
-    console.log("config/passport.js login");
     User.getUser(name, function(err, user) {
       if (err){
         return done(err);

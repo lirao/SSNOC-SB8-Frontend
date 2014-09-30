@@ -12,7 +12,6 @@ module.exports = function(_, io, participants, passport, refreshAllUsers) {
     },
 
     getSignup : function(req, res) {
-        console.log("controller/user.js getSignup");
       res.render('signup', {message: req.flash('signupMessage')});
     },
 
@@ -26,7 +25,7 @@ module.exports = function(_, io, participants, passport, refreshAllUsers) {
     },
 
     postSignup : function(req, res, next) {
-        console.log("controller/user.js postSignup");
+      console.log("test1");
       passport.authenticate('local-signup', function(err, user, info) {
         if (err)
           return next(err);
@@ -43,6 +42,15 @@ module.exports = function(_, io, participants, passport, refreshAllUsers) {
 
     getWelcome : function(req, res) {
       res.render('welcome', {title: "Hello " + req.session.passport.user.user_name + " !!"} );
+    },
+
+    postStatus : function(req, res) {
+        console.log("post");
+        var user_name = req.session.passport.user.user_name;
+        var user_status = req.body.status;
+        console.log(user_name);
+        console.log(user_status);
+        res.json(200);
     }
   };
 };

@@ -17,12 +17,19 @@ html
             img(src="/img/photo4.png" height=60)
           div.col-xs-8.col-sm-9.col-md-10.col-lg-10
             strong #{user_name}
-            strong(id="statusBar") #{user_status}
+            p(id="statusBar") #{user_status}
             div.status
-              form.form-status(action='', method='')
+              form.form-status(name='status' action='/status', method='post')
                 div.form-group
-                  input.status.form-control(id="userStatus" type="text" class='form-control' name='status' placeholder="Please enter your status")
-            button(type="submit", class='btn btn-info btn-lg' id="postStatusBtn") Post Status
+                  input.status.form-control(type="radio" class='form-control' name='status' value=0)
+                  label GREEN
+                  input.status.form-control(type="radio" class='form-control' name='status' value=1)
+                  label YELLOW
+                  input.status.form-control(type="radio" class='form-control' name='status' value=2)
+                  label RED
+                  input.status.form-control(type="radio" class='form-control' name='status' value=3 checked=true)
+                  label NULL
+                button(type="submit", class='btn btn-info btn-lg' id="postStatusBtn") Post Status
       div.well#participants_online
       br
       //

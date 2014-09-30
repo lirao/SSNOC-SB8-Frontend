@@ -67,6 +67,14 @@ function init() {
             }
       })
     });
+
+      var $form = $('form');
+      $form.submit(function(){
+          $.post($(this).attr('action'), $(this).serialize(), function(response){
+              document.getElementById("statusBar").innerHTML=$('input[name=status]:checked').val();
+          },'json');
+          return false;
+      });
   }
 
   socket.on('connect', function () {
@@ -111,11 +119,6 @@ function init() {
             currentButton.html('<i class="glyphicon glyphicon-chevron-down text-muted"></i>');
           }
     })
-  });
-
-  $('#postStatusBtn').click(function() {
-      $('#statusBar').innerText=$('userStatus').value;
-      return false;
   });
 }
 
