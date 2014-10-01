@@ -185,14 +185,17 @@ function init() {
   });
 
     $('#selStatus').change(function() {
-        $(this).closest('form').trigger('submit');
-        socket.on('newConnection', function (data) {
-            updateParticipants(data.participants);
-        });
-
-        socket.on('userDisconnected', function(data) {
-            updateParticipants(data.participants);
-        });
+        $(this).closest('form').submit(function(e){
+	        $.ajax({
+                url:  '/user',
+                type: 'GET',
+                dataType: 'json'
+            }).done(function(data) {
+                console.log(data);
+                socket.emit('newUser', {id: sessionId, name: data.name, status: data.status});
+            });
+	    });
+	    $(this).closest('form').submit();
     });
 }
 
