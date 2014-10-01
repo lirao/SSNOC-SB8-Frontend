@@ -9,7 +9,7 @@ function init() {
 
    var sel =  document.getElementById("selStatus");
     var path = document.getElementById("imgStatus").src;
-   switch (path.substring(path.length - 9, path.length - 10)) {
+   switch (path.substring(path.length - 8, path.length - 9)) {
        case "n":
            sel.selectedIndex = 0;
            break;
