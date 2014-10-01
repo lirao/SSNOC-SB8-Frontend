@@ -185,6 +185,7 @@ function init() {
   });
 
     $('#selStatus').change(function() {
+        socket.emit('newUser', {id: sessionId, name: data.name, status: data.status});
         $(this).closest('form').trigger('submit');
     });
 }
