@@ -186,16 +186,16 @@ function init() {
 
     $('#selStatus').change(function() {
         $(this).closest('form').submit(function(e){
-	    $.ajax({
-               url:  '/user',
-               type: 'GET',
-               dataType: 'json'
+	        $.ajax({
+                url:  '/user',
+                type: 'GET',
+                dataType: 'json'
             }).done(function(data) {
                 console.log(data);
                 socket.emit('newUser', {id: sessionId, name: data.name, status: data.status});
             });
-	});
-	$(this).closest('form').submit();
+	    });
+	    $(this).closest('form').submit();
     });
 }
 
