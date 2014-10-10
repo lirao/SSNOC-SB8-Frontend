@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"net/http"
 	"bytes"
+	"encoding/json"
 )
 
-type User struct {
-	Name   string
-	Status int
-}
+const backendUrl string = "http://localhost:9000"
 
 func main() {
 	m := martini.Classic()
@@ -30,6 +28,7 @@ func main() {
 	m.Get("/logout", GetLogout)
 	m.Get("/signup", GetSignup)
 	m.Post("/signup", PostSignup)
+	m.Get("/people", RequireLogin, GetPeople)
 
 	m.Run()
 }
@@ -45,7 +44,7 @@ func RequireLogin(rw http.ResponseWriter, r *http.Request, s sessions.Session, c
 }
 
 func GetUser(name string) bool {
-	urlBack := fmt.Sprintf("http://localhost:9000/user/%s", name)
+	urlBack := fmt.Sprintf("%s/user/%s", backendUrl, name)
 	reqBack, err := http.NewRequest("GET", urlBack, nil)
 	if err != nil {
 		panic(err)
@@ -69,9 +68,8 @@ func GetLogin(ren render.Render, s sessions.Session) {
 }
 
 func PostUserAuthenticate(userName string, password string) int {
-	jsonReqBack := []byte(fmt.Sprintf("{\"password\":\"%s\"}", password))
-	urlBack := fmt.Sprintf("http://localhost:9000/user/%s/authenticate", userName)
-
+	jsonReqBack, _ := json.Marshal(map[string]string{"password": password})
+	urlBack := fmt.Sprintf("%s/user/%s/authenticate", backendUrl, userName)
 	reqBack, err := http.NewRequest("POST", urlBack, bytes.NewBuffer(jsonReqBack))
 	if err != nil {
 		panic(err)
@@ -88,8 +86,8 @@ func PostUserAuthenticate(userName string, password string) int {
 
 func PostLogin(ren render.Render, r *http.Request, s sessions.Session) {
 	userName := r.FormValue("username")
-	status := PostUserAuthenticate(userName, r.FormValue("password"))
-	switch status {
+	statusCode := PostUserAuthenticate(userName, r.FormValue("password"))
+	switch statusCode {
 	case 401:
 		ren.Redirect("/login")
 	case 404:
@@ -115,9 +113,8 @@ func PostSignup(ren render.Render, r *http.Request, s sessions.Session) {
 	password := r.FormValue("password")
 	status := PostUserAuthenticate(userName, password)
 	if (status == 401 || status == 404) {
-		jsonReqBack := []byte(fmt.Sprintf("{\"userName\":\"%s\",\"password\":\"%s\",\"createdAt\":\"%s\"}",
-			userName, password, "2014-10-05 09:12"))
-		urlBack := "http://localhost:9000/user/signup"
+		jsonReqBack, _ := json.Marshal(map[string]string{"userName": userName, "password": password, "createdAt": "2014-10-05 09:12"})
+		urlBack := backendUrl + "/user/signup"
 		reqBack, err := http.NewRequest("POST", urlBack, bytes.NewBuffer(jsonReqBack))
 		if err != nil {
 			panic(err)
@@ -140,4 +137,8 @@ func PostSignup(ren render.Render, r *http.Request, s sessions.Session) {
 		s.Set("userName", userName)
 		ren.Redirect("/")
 	}
+}
+
+func GetPeople(ren render.Render) {
+	ren.HTML(200, "people", nil)
 }
