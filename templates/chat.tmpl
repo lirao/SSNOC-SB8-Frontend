@@ -1,8 +1,7 @@
-<h1>Welcome! <b>{{ . }}</b></h1>
-<p><font color="green">Green</font> status stands for "I am OK, I do not need help."</p>
-<p><font color="yellow">Yellow</font> status stands for "I need help, but this is not a life threatening emergency."</p>
-<p><font color="red">Red</font> status stands for "I need help now, as this is a life threatening emergency!</p>
-<ul id=messages></ul>
+<html>
+<body>
+    <script src='//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
+    <ul id=messages></ul>
     <form>
         <select id="status">
             <option value="0">I'm OK</option>
@@ -23,9 +22,11 @@
           };
 
             $('#status').on('change', function() {
-                c.send('{"username": "{{ . }}", "status": ' + $('#status').val() + '}');
+                c.send('{"username": "abc", "status": ' + $('#status').val() + '}');
                 return false;
             });
 
         }
     </script>
+</body>
+</html>

@@ -4,13 +4,53 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
 	"github.com/martini-contrib/sessions"
+	"github.com/gorilla/websocket"
 	"fmt"
 	"net/http"
 	"bytes"
 	"encoding/json"
+	"sync"
+	"log"
+	"net"
+
 )
 
 const backendUrl string = "http://localhost:9000"
+
+
+var ActiveClients = make(map[ClientConn] int)
+var ActiveClientsRWMutex sync.RWMutex
+
+type ClientConn struct {
+	websocket *websocket.Conn
+	clientIP  net.Addr
+}
+
+func addClient(cc ClientConn) {
+	ActiveClientsRWMutex.Lock()
+	ActiveClients[cc] = 0
+	ActiveClientsRWMutex.Unlock()
+}
+
+func deleteClient(cc ClientConn) {
+	ActiveClientsRWMutex.Lock()
+	delete(ActiveClients, cc)
+	ActiveClientsRWMutex.Unlock()
+}
+
+func broadcastMessage(messageType int, message []byte) {
+	ActiveClientsRWMutex.RLock()
+	defer ActiveClientsRWMutex.RUnlock()
+
+	for client, _ := range ActiveClients {
+		log.Println(client)
+		if err := client.websocket.WriteMessage(messageType, message); err != nil {
+			return
+		}
+	}
+
+}
+
 
 func main() {
 	m := martini.Classic()
@@ -29,6 +69,36 @@ func main() {
 	m.Get("/signup", GetSignup)
 	m.Post("/signup", PostSignup)
 	m.Get("/people", RequireLogin, GetPeople)
+
+	m.Get("/chat", GetChat)
+
+	m.Get("/chat/sock", func(w http.ResponseWriter, r *http.Request) {
+			log.Println(ActiveClients)
+			ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
+			if _, ok := err.(websocket.HandshakeError); ok {
+				http.Error(w, "Not a websocket handshake", 400)
+				return
+			} else if err != nil {
+				log.Println(err)
+				return
+			}
+			client := ws.RemoteAddr()
+			sockCli := ClientConn{ws, client}
+			addClient(sockCli)
+
+			for {
+				log.Println(len(ActiveClients), ActiveClients)
+				messageType, p, err := ws.ReadMessage()
+				log.Println("P: ", p)
+				if err != nil {
+					deleteClient(sockCli)
+					log.Println("bye")
+					log.Println(err)
+					return
+				}
+				broadcastMessage(messageType, p)
+			}
+		})
 
 	m.Run()
 }
@@ -142,3 +212,9 @@ func PostSignup(ren render.Render, r *http.Request, s sessions.Session) {
 func GetPeople(ren render.Render) {
 	ren.HTML(200, "people", nil)
 }
+
+func GetChat(ren render.Render) {
+	ren.HTML(200, "chat", nil)
+}
+
+
