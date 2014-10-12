@@ -1,10 +1,10 @@
 <script type="text/javascript" src="/js/signup.js"></script>
 <form class="form-signup col-md-4 col-md-offset-4" role="form" action="/signup" method="POST">
     <h2 class="form-signup-heading">Please sign up</h2>
-    <input type="text" name="username" class="form-control" placeholder="User name" autofocus>
+    <h6><font color="red">{{ . }}</font>&nbsp;</h6>
+    <input type="text" name="userName" class="form-control" placeholder="User name" autofocus>
     <input type="password" name="password" class="form-control" placeholder="Password">
-    <input type="password" name="re-password" class="form-control" placeholder="Password again">
-
+    <input type="password" name="passwordRe" class="form-control" placeholder="Password again">
     <button class="btn btn-lg btn-primary btn-block" type="submit" id="signup">Sign up</button>
     <h5>Or <a href="/login">already have an account</a>.</h5>
 </form>

@@ -1,10 +1,19 @@
-<ul id="list-people">
-    <ul id="list-me"></ul>
+<div id="list-people">
+    <div><table data-height="400" data-row-style="rowStyle">
+        <tr>
+            <td class="col-md-2"><b id="me-name">{{ .Name }}</b><b id="me-status">&#9679;</b></td>
+            <td>
+                <select id="status">
+                    <option value="0">I'm OK</option>
+                    <option value="1">I need help</option>
+                    <option value="2">Emergency</option>
+                </select>
+            </td>
+        </tr>
+    </table></div>
     <br>
-    <ul id="list-online"></ul>
+    <ul id="list-online" class="list-group"></ul>
     <br>
-    <ul id="list-offline"></ul>
-</ul>
-<button type="button" id="test1">test1</button>
-<button type="button" id="test2">test2</button>
+    <ul id="list-offline" class="list-group"></ul>
+</div>
 <script type="text/javascript" src="/js/people.js"></script>
