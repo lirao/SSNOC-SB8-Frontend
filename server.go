@@ -24,6 +24,8 @@ type User struct {
 	Online string
 }
 
+var People map[string]User
+
 var ActiveClients = make(map[ClientConn] int)
 var ActiveClientsRWMutex sync.RWMutex
 
@@ -34,6 +36,8 @@ type ClientConn struct {
 
 func main() {
 	m := martini.Classic()
+
+	UpdatePeopleList()
 
 	store := sessions.NewCookieStore([]byte("rooftrellen"))
 	m.Use(sessions.Sessions("frontend", store))
@@ -49,9 +53,10 @@ func main() {
 	m.Get("/signup", GetSignup)
 	m.Post("/signup", PostSignup)
 	m.Get("/people", RequireLogin, GetPeople)
-	m.Get("/status", RequireLogin, GetStatus)
+	m.Get("/socket", RequireLogin, GetSocket)
 
 	m.Run()
+
 }
 
 func RequireLogin(ren render.Render, s sessions.Session, c martini.Context) {
@@ -108,6 +113,13 @@ func PostLogin(ren render.Render, r *http.Request, s sessions.Session) {
 	userName := r.FormValue("userName")
 	if PostUserAuthenticate(userName, r.FormValue("password")) {
 		s.Set("userName", userName)
+		user := User{People[userName].Name, People[userName].Status, "1"}
+		People[userName] = user
+		res := map[string]interface{}{}
+		res["type"] = "login"
+		res["user"] = user
+		broadcastMessage(&res)
+
 		ren.Redirect("/")
 	} else {
 		ren.HTML(200, "login", "Wrong user name or password. Please try again.")
@@ -132,7 +144,15 @@ func PostUserAuthenticate(userName string, password string) bool {
 }
 
 func GetLogout(ren render.Render, s sessions.Session) {
+	userName := s.Get("userName").(string)
 	s.Delete("userName")
+	user := User{People[userName].Name, People[userName].Status, "0"}
+	People[userName] = user
+	res := map[string]interface{}{}
+	res["type"] = "logout"
+	res["user"] = user
+	broadcastMessage(&res)
+
 	ren.Redirect("/login")
 }
 
@@ -146,6 +166,13 @@ func PostSignup(ren render.Render, r *http.Request, s sessions.Session) {
 	password := r.FormValue("password")
 	if PostUserAuthenticate(userName, password) {
 		s.Set("userName", userName)
+		user := User{People[userName].Name, People[userName].Status, "1"}
+		People[userName] = user
+		res := map[string]interface{}{}
+		res["type"] = "login"
+		res["user"] = user
+		broadcastMessage(&res)
+
 		ren.Redirect("/")
 	} else {
 		body, _ := json.Marshal(map[string]string{"userName": userName, "password": password})
@@ -164,6 +191,13 @@ func PostSignup(ren render.Render, r *http.Request, s sessions.Session) {
 		switch res.StatusCode {
 		case 201:
 			s.Set("userName", userName)
+			user := User{userName, "0", "1"}
+			People[userName] = user
+			res := map[string]interface{}{}
+			res["type"] = "signup"
+			res["user"] = user
+			broadcastMessage(&res)
+
 			ren.Redirect("/")
 		default:
 			ren.HTML(200, "signup", "User name is taken. Please try another one.")
@@ -175,7 +209,7 @@ func GetPeople(ren render.Render, user *User) {
 	ren.HTML(200, "people", user)
 }
 
-func GetStatus(ren render.Render, rw http.ResponseWriter, r *http.Request) {
+func GetSocket(ren render.Render, rw http.ResponseWriter, r *http.Request) {
 	log.Println(ActiveClients)
 	ws, err := websocket.Upgrade(rw, r, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
@@ -206,19 +240,24 @@ func GetStatus(ren render.Render, rw http.ResponseWriter, r *http.Request) {
 			res["type"] = "status"
 			res["user"] = req["user"]
 			broadcastMessage(&res)
+			user := req["user"].(map[string]interface{})
+			temp := User{user["name"].(string), user["status"].(string), "1"}
+			People[user["name"].(string)] = temp
 			postReq := res["user"].(map[string]interface{})
 			status, _ := strconv.Atoi(postReq["status"].(string))
 			PostStatusBack(float64(status), postReq["name"].(string))
+			log.Println(People)
 		case "people":
 			res := map[string]interface{}{}
 			res["type"] = "people"
-			res["users"] = *GetUsersBack()
+			res["users"] = People
 			ws.WriteJSON(&res)
 		}
 	}
 }
 
-func GetUsersBack() *[]map[string]interface{} {
+func UpdatePeopleList() {
+	People = make(map[string]User)
 	url := fmt.Sprintf("%s/users", backendUrl)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -236,8 +275,33 @@ func GetUsersBack() *[]map[string]interface{} {
 		panic(err)
 	}
 	json.Unmarshal(body, &data)
-	return &data
+	for _, item := range data {
+		name := item["userName"].(string)
+		People[name] = User{name, fmt.Sprintf("%v", int(item["lastStatusCode"].(float64))), "0"}
+	}
+	return
 }
+
+//func GetUsersBack() *[]map[string]interface{} {
+//	url := fmt.Sprintf("%s/users", backendUrl)
+//	req, err := http.NewRequest("GET", url, nil)
+//	if err != nil {
+//		panic(err)
+//	}
+//	client := &http.Client{}
+//	res, err := client.Do(req)
+//	if err != nil {
+//		panic(err)
+//	}
+//	defer res.Body.Close()
+//	data := []map[string]interface{}{}
+//	body, err := ioutil.ReadAll(res.Body)
+//	if err != nil {
+//		panic(err)
+//	}
+//	json.Unmarshal(body, &data)
+//	return &data
+//}
 
 func PostStatusBack(status float64, name string) {
 
@@ -272,11 +336,11 @@ func deleteClient(cc ClientConn) {
 	ActiveClientsRWMutex.Unlock()
 }
 
-func broadcastMessage(user interface{}) {
+func broadcastMessage(message interface{}) {
 	ActiveClientsRWMutex.RLock()
 	defer ActiveClientsRWMutex.RUnlock()
 	for client, _ := range ActiveClients {
-		if err := client.websocket.WriteJSON(&user); err != nil {
+		if err := client.websocket.WriteJSON(&message); err != nil {
 			panic(err)
 		}
 	}
