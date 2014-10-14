@@ -25,6 +25,7 @@ type User struct {
 }
 
 var People map[string]User
+var Wall []map[string]interface{}
 
 var ActiveClients = make(map[ClientConn] int)
 var ActiveClientsRWMutex sync.RWMutex
@@ -38,6 +39,7 @@ func main() {
 	m := martini.Classic()
 
 	UpdatePeopleList()
+	UpdateWall()
 
 	store := sessions.NewCookieStore([]byte("rooftrellen"))
 	m.Use(sessions.Sessions("frontend", store))
@@ -252,6 +254,18 @@ func GetSocket(ren render.Render, rw http.ResponseWriter, r *http.Request) {
 			res["type"] = "people"
 			res["users"] = People
 			ws.WriteJSON(&res)
+		case "wall":
+			res := map[string]interface{}{}
+			res["type"] = "wall"
+			res["messages"] = Wall
+			ws.WriteJSON(&res)
+		case "chat":
+			if (len(Wall) == 10) {
+				Wall = append(Wall[1:10], req["message"].(map[string]interface{}))
+			} else {
+				Wall = append(Wall, req["message"].(map[string]interface{}))
+			}
+			broadcastMessage(&req)
 		}
 	}
 }
@@ -299,8 +313,16 @@ func PostStatusBack(status float64, name string) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 201 {
-		log.Print(res.StatusCode)
 	}
+}
+
+func UpdateWall() {
+	message := map[string]interface{}{"sender": "xxx", "receiver": "public", "content": "fdafafa"}
+	Wall = append(Wall, message)
+	message = map[string]interface{}{"sender": "yyy", "receiver": "public", "content": "adsfadf"}
+	Wall = append(Wall, message)
+	message = map[string]interface{}{"sender": "zzz", "receiver": "public", "content": "rfdasfev"}
+	Wall = append(Wall, message)
 }
 
 func addClient(cc ClientConn) {

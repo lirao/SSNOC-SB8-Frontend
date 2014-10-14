@@ -7,7 +7,7 @@ sock.onopen = function(){
         var body = JSON.parse(res.data);
         switch (body.type) {
         case "people":
-            showList(body.users);
+            updatePeople(body.users);
             break;
         case "status":
             updateStatus(body.user);
@@ -21,6 +21,12 @@ sock.onopen = function(){
         case "signup":
             updateSignup(body.user);
             break;
+        case "wall":
+            updateWall(body.messages);
+            break;
+        case "chat":
+            postMessage(body.message);
+            break;
         }
         var newMessage = $('<li>').text(res.data);
             $('#messages').append(newMessage);
@@ -32,14 +38,20 @@ sock.onopen = function(){
         sock.send(JSON.stringify({"user": me, "type": "status"}));
         return false;
     });
+    $('#post-wall').on('click', function() {
+        if ($('input[name="wall-message"]').val().length > 0) {
+            sock.send(JSON.stringify({"type": "chat", "message": {"sender": me.name, "receiver": "public", "content": $('input[name="wall-message"]').val()}}));
+            $('input[name="wall-message"]').val('');
+            $('input[name="wall-message"]').focus();
+        }
+    });
     sock.send(JSON.stringify({"type": "people"}));
+    sock.send(JSON.stringify({"type": "wall"}));
 }
 
-function showList(people) {
-    console.log(people)
+function updatePeople(people) {
     var myName = $('#me-name').text();
     for (var temp in people) {
-        console.log(people[temp]);
         user = {"name": people[temp].Name, "status": people[temp].Status, "online": people[temp].Online};
         if (people[temp].Name === myName) {
             me = user;
@@ -124,6 +136,19 @@ function updateSignup(user) {
         $("#list-online").children().eq(onlineIndex + 1).before("<li class=\"list-group-item\">"+temp.name+"<b>&#9679;</b></li>");
     }
     changeColor($("#list-online").children().eq(onlineIndex+1).find("b"), temp.status);
+}
+
+function updateWall(messages) {
+    var l = messages.length;
+    for (var i = 0; i < l; i++) {
+        postMessage(messages[i]);
+    }
+}
+
+function postMessage(message) {
+    if (message.receiver === "public") {
+        $('#wall').append("<li>"+message.sender+": "+message.content+"</li>");
+    }
 }
 
 function findUserByName(list, name){
