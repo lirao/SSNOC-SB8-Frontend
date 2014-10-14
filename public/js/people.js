@@ -7,7 +7,7 @@ sock.onopen = function(){
         var body = JSON.parse(res.data);
         switch (body.type) {
         case "people":
-            showList(body.users);
+            updatePeople(body.users);
             break;
         case "status":
             updateStatus(body.user);
@@ -21,6 +21,12 @@ sock.onopen = function(){
         case "signup":
             updateSignup(body.user);
             break;
+        case "wall":
+            updateWall(body.messages);
+            break;
+        case "chat":
+            postMessage(body.message);
+            break;
         }
         var newMessage = $('<li>').text(res.data);
             $('#messages').append(newMessage);
@@ -32,14 +38,20 @@ sock.onopen = function(){
         sock.send(JSON.stringify({"user": me, "type": "status"}));
         return false;
     });
+    $('#post-wall').on('click', function() {
+        if ($('input[name="wall-message"]').val().length > 0) {
+            sock.send(JSON.stringify({"type": "chat", "message": {"sender": me.name, "receiver": "public", "content": $('input[name="wall-message"]').val()}}));
+            $('input[name="wall-message"]').val('');
+            $('input[name="wall-message"]').focus();
+        }
+    });
     sock.send(JSON.stringify({"type": "people"}));
+    sock.send(JSON.stringify({"type": "wall"}));
 }
 
-function showList(people) {
-    console.log(people)
+function updatePeople(people) {
     var myName = $('#me-name').text();
     for (var temp in people) {
-        console.log(people[temp]);
         user = {"name": people[temp].Name, "status": people[temp].Status, "online": people[temp].Online};
         if (people[temp].Name === myName) {
             me = user;
@@ -74,79 +86,6 @@ function updateStatus(user) {
     var onlineIndex = findUserByName(online, user.name);
     online[onlineIndex] = user;
     changeColor($("#list-online").children().eq(onlineIndex+1).find("b"), user.status);
-
-//    var offlineIndex = findUserByName(offline, user.name);
-//    if (offlineIndex !== -1) {
-//        if (user.online === "1") {
-//            offline.splice(offlineIndex, 1);
-//            online.push(user);
-//            online.sort(compareUser);
-//            var onlineIndex = findUserByName(online, user.name);
-//            if (onlineIndex + 1 === online.length) {
-//                $("#list-online").append($("#list-offline").children().eq(offlineIndex));
-//                changeColor($("#list-online").last().find("b"), user.status);
-//            } else {
-//                $("#list-online").children().eq(onlineIndex).before($("#list-offline").children().eq(offlineIndex));
-//                changeColor($("#list-online").children().eq(onlineIndex).find("b"), user.status);
-//            }
-//        } else {
-//            offline[offlineIndex] = user;
-//            changeColor($("#list-offline").children().eq(offlineIndex).find("b"), user.status);
-//        }
-//    } else {
-//        var onlineIndex = findUserByName(online, user.name);
-//        if (onlineIndex !== -1) {
-//        } else {
-//
-//        }
-//    }
-
-
-//    if (user.online === 1) { // New online user
-//        var offlineIndex = findUserByName(offline, user.name);
-//        if (offlineIndex !== -1) { // Old offline user
-//            offline.splice(offlineIndex, 1);
-//            online.push(user);
-//            online.sort(compareUser);
-//            var onlineIndex = findUserByName(online, user.name);
-//            if (onlineIndex + 1 === online.length) {
-//                $("#list-online").append($("#list-offline").children().eq(offlineIndex));
-//            } else {
-//                $("#list-online").children().eq(onlineIndex).before($("#list-offline").children().eq(offlineIndex));
-//            }
-//        } else { // New user
-//            online.push(user);
-//            online.sort(compareUser);
-//            var onlineIndex = findUserByName(online, user.name);
-//            if (onlineIndex + 1 === online.length) {
-//                $("#list-online").append("<li class=\"list-group-item\">"+user.name+"<b>&#9679;</b></li>");
-//            } else {
-//                $("#list-online").children().eq(onlineIndex).before("<li class=\"list-group-item\">"+user.name+"<b>&#9679;</b></li>");
-//            }
-//        }
-//    } else { // New offline user
-//        var onlineIndex = findUserByName(online, user.name);
-//        if (onlineIndex !== -1) { // Old online user
-//            online.splice(onlineIndex, 1);
-//            offline.push(user);
-//            offline.sort(compareUser);
-//            var offlineIndex = findUserByName(offline, user.name);
-//            if (offlineIndex + 1 === offline.length) {
-//                $("#list-offline").append($("#list-online").children().eq(onlineIndex));
-//            } else {
-//                $("#list-offline").children().eq(offlineIndex).before($("#list-online").children().eq(onlineIndex));
-//            }
-//        } else { // New user
-//            offline.push(user);
-//            offline.sort(compareUser);
-//            var offlineIndex = findUserByName(offline, user.name);
-//            if (offlineIndex + 1 === offline.length) {
-//                $("#list-offline").append("<li class=\"list-group-item\">"+user.name+"<b>&#9679;</b></li>");
-//            } else {
-//                $("#list-offline").children().eq(offlineIndex).before("<li class=\"list-group-item\">"+user.name+"<b>&#9679;</b></li>");
-//            }
-//        }
-//    }
 }
 
 function updateLogin(user) {
@@ -197,6 +136,19 @@ function updateSignup(user) {
         $("#list-online").children().eq(onlineIndex + 1).before("<li class=\"list-group-item\">"+temp.name+"<b>&#9679;</b></li>");
     }
     changeColor($("#list-online").children().eq(onlineIndex+1).find("b"), temp.status);
+}
+
+function updateWall(messages) {
+    var l = messages.length;
+    for (var i = 0; i < l; i++) {
+        postMessage(messages[i]);
+    }
+}
+
+function postMessage(message) {
+    if (message.receiver === "public") {
+        $('#wall').append("<li>"+message.sender+"("+message.time+"): "+message.content+"</li>");
+    }
 }
 
 function findUserByName(list, name){

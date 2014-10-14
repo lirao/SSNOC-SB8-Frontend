@@ -14,6 +14,7 @@ import (
 	"net"
 	"io/ioutil"
 	"strconv"
+	"time"
 )
 
 const backendUrl string = "http://localhost:9000"
@@ -38,6 +39,7 @@ type Author struct {
 }
 
 var People map[string]User
+var Wall []map[string]interface{}
 
 var ActiveClients = make(map[ClientConn] int)
 var ActiveClientsRWMutex sync.RWMutex
@@ -51,6 +53,7 @@ func main() {
 	m := martini.Classic()
 
 	UpdatePeopleList()
+	UpdateWall()
 
 	store := sessions.NewCookieStore([]byte("rooftrellen"))
 	m.Use(sessions.Sessions("frontend", store))
@@ -286,12 +289,45 @@ func GetSocket(ren render.Render, rw http.ResponseWriter, r *http.Request) {
 			postReq := res["user"].(map[string]interface{})
 			status, _ := strconv.Atoi(postReq["status"].(string))
 			PostStatusBack(float64(status), postReq["name"].(string))
-			log.Println(People)
+
+			temp2 := map[string]interface{}{}
+			temp2["type"] = "chat"
+			temp2["message"] = map[string]interface{}{}
+			temp3 := temp2["message"].(map[string]interface{})
+			temp3["sender"] = user["name"].(string)
+			temp3["receiver"] = "public"
+			temp3["time"] = time.Now().Format("2006-01-02 15:04")
+			s := postReq["status"].(string)
+			switch s {
+			case "0":
+				s = "<font color=\"green\">I'm OK</font>"
+				case "1":
+			s="<font color=\"yellow\">I need help</font>"
+			case "2":
+			s="<font color=\"red\">Emergency</font>"
+			}
+			temp3["content"] = "Just change the status to " + s
+
+			broadcastMessage(&temp2)
 		case "people":
 			res := map[string]interface{}{}
 			res["type"] = "people"
 			res["users"] = People
 			ws.WriteJSON(&res)
+		case "wall":
+			res := map[string]interface{}{}
+			res["type"] = "wall"
+			res["messages"] = Wall
+			ws.WriteJSON(&res)
+		case "chat":
+			temp := req["message"].(map[string]interface{})
+			temp["time"] = time.Now().Format("2006-01-02 15:04")
+			if (len(Wall) == 10) {
+				Wall = append(Wall[1:10], temp)
+			} else {
+				Wall = append(Wall, temp)
+			}
+			broadcastMessage(&req)
 		}
 	}
 }
@@ -322,27 +358,6 @@ func UpdatePeopleList() {
 	return
 }
 
-//func GetUsersBack() *[]map[string]interface{} {
-//	url := fmt.Sprintf("%s/users", backendUrl)
-//	req, err := http.NewRequest("GET", url, nil)
-//	if err != nil {
-//		panic(err)
-//	}
-//	client := &http.Client{}
-//	res, err := client.Do(req)
-//	if err != nil {
-//		panic(err)
-//	}
-//	defer res.Body.Close()
-//	data := []map[string]interface{}{}
-//	body, err := ioutil.ReadAll(res.Body)
-//	if err != nil {
-//		panic(err)
-//	}
-//	json.Unmarshal(body, &data)
-//	return &data
-//}
-
 func PostStatusBack(status float64, name string) {
 
 	s := map[string]interface{}{"createdAt":"2009-09-09 09:09", "statusCode":status, "location":"null"}
@@ -360,7 +375,6 @@ func PostStatusBack(status float64, name string) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 201 {
-		log.Print(res.StatusCode)
 	}
 }
 
@@ -381,6 +395,15 @@ func GetWall(ren render.Render, user *User) {
 	log.Println(data)
 
 	ren.HTML(200, "wall", map[string]interface {}{"user": user, "posts":data})
+}
+
+func UpdateWall() {
+	message := map[string]interface{}{"sender": "xxx", "receiver": "public", "content": "fdafafa", "time": "20:44"}
+	Wall = append(Wall, message)
+	message = map[string]interface{}{"sender": "yyy", "receiver": "public", "content": "adsfadf", "time": "22:22"}
+	Wall = append(Wall, message)
+	message = map[string]interface{}{"sender": "zzz", "receiver": "public", "content": "rfdasfev", "time": "23:23"}
+	Wall = append(Wall, message)
 }
 
 func addClient(cc ClientConn) {

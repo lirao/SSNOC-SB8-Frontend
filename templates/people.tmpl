@@ -1,4 +1,4 @@
-<div id="list-people">
+<div id="list-people" class="col-xs-6">
     <div><table data-height="400" data-row-style="rowStyle">
         <tr>
             <td class="col-md-2"><b id="me-name">{{ .Name }}</b><b id="me-status">&#9679;</b></td>
@@ -19,5 +19,12 @@
     <ul id="list-offline" class="list-group">
         <li>Offline Users</li>
     </ul>
+</div>
+<div id="wall-people" class="col-xs-6">
+    <ul id="wall">
+
+    </ul>
+    <input type="text" name="wall-message" class="form-control" placeholder="Post on wall" autofocus>
+    <button type="button" id="post-wall">Post</button>
 </div>
 <script type="text/javascript" src="/js/people.js"></script>
