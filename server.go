@@ -282,27 +282,6 @@ func UpdatePeopleList() {
 	return
 }
 
-//func GetUsersBack() *[]map[string]interface{} {
-//	url := fmt.Sprintf("%s/users", backendUrl)
-//	req, err := http.NewRequest("GET", url, nil)
-//	if err != nil {
-//		panic(err)
-//	}
-//	client := &http.Client{}
-//	res, err := client.Do(req)
-//	if err != nil {
-//		panic(err)
-//	}
-//	defer res.Body.Close()
-//	data := []map[string]interface{}{}
-//	body, err := ioutil.ReadAll(res.Body)
-//	if err != nil {
-//		panic(err)
-//	}
-//	json.Unmarshal(body, &data)
-//	return &data
-//}
-
 func PostStatusBack(status float64, name string) {
 
 	s := map[string]interface{}{"createdAt":"2009-09-09 09:09", "statusCode":status, "location":"null"}
