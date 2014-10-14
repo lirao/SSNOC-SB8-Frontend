@@ -24,6 +24,19 @@ type User struct {
 	Online string
 }
 
+type Message struct {
+	MessageID int
+	Content string
+	Author Author
+	MessageType int
+	PostedAt string
+}
+
+type Author struct {
+	UserName string
+	LastStatusCode int
+}
+
 var People map[string]User
 
 var ActiveClients = make(map[ClientConn] int)
@@ -54,6 +67,8 @@ func main() {
 	m.Post("/signup", PostSignup)
 	m.Get("/people", RequireLogin, GetPeople)
 	m.Get("/socket", RequireLogin, GetSocket)
+	m.Get("/wall", RequireLogin, GetWall)
+	m.Post("/message", RequireLogin, PostMessage)
 
 	m.Run()
 
@@ -205,6 +220,31 @@ func PostSignup(ren render.Render, r *http.Request, s sessions.Session) {
 	}
 }
 
+func PostMessage(ren render.Render, r *http.Request, s sessions.Session) {
+	message := r.FormValue("message")
+	userName := s.Get("userName")
+	jsonString := map[string]interface{}{"content": message}
+	body, _ := json.Marshal(jsonString)
+	url := backendUrl + "/message/" + userName.(string)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+	log.Print(res.StatusCode)
+
+	if res.StatusCode == 201 {
+		ren.Redirect("/wall")
+	}
+
+}
+
 func GetPeople(ren render.Render, user *User) {
 	ren.HTML(200, "people", user)
 }
@@ -322,6 +362,25 @@ func PostStatusBack(status float64, name string) {
 	if res.StatusCode != 201 {
 		log.Print(res.StatusCode)
 	}
+}
+
+func GetWall(ren render.Render, user *User) {
+	url := backendUrl + "/messages/wall"
+	req, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer req.Body.Close()
+	decoder := json.NewDecoder(req.Body)
+	var data []Message
+	errDecode := decoder.Decode(&data)
+	if errDecode != nil {
+		panic(errDecode)
+	}
+
+	log.Println(data)
+
+	ren.HTML(200, "wall", map[string]interface {}{"user": user, "posts":data})
 }
 
 func addClient(cc ClientConn) {
