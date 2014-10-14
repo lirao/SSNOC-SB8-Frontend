@@ -15,3 +15,49 @@
         {{end}}
     </ul>
 </div>
+
+
+
+<!--func GetWall(ren render.Render, user *User) {-->
+<!--url := backendUrl + "/messages/wall"-->
+<!--req, err := http.Get(url)-->
+<!--if err != nil {-->
+<!--panic(err)-->
+<!--}-->
+<!--defer req.Body.Close()-->
+<!--decoder := json.NewDecoder(req.Body)-->
+<!--var data []Message-->
+<!--errDecode := decoder.Decode(&data)-->
+<!--if errDecode != nil {-->
+<!--panic(errDecode)-->
+<!--}-->
+
+<!--log.Println(data)-->
+
+<!--ren.HTML(200, "wall", map[string]interface {}{"user": user, "posts":data})-->
+<!--}-->
+
+<!--func PostMessage(ren render.Render, r *http.Request, s sessions.Session) {-->
+<!--message := r.FormValue("message")-->
+<!--userName := s.Get("userName")-->
+<!--jsonString := map[string]interface{}{"content": message}-->
+<!--body, _ := json.Marshal(jsonString)-->
+<!--url := backendUrl + "/message/" + userName.(string)-->
+<!--req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))-->
+<!--if err != nil {-->
+<!--panic(err)-->
+<!--}-->
+<!--req.Header.Set("Content-Type", "application/json")-->
+<!--client := &http.Client{}-->
+<!--res, err := client.Do(req)-->
+<!--if err != nil {-->
+<!--panic(err)-->
+<!--}-->
+<!--defer res.Body.Close()-->
+<!--log.Print(res.StatusCode)-->
+
+<!--if res.StatusCode == 201 {-->
+<!--ren.Redirect("/wall")-->
+<!--}-->
+
+<!--}-->

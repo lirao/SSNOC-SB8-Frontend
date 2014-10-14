@@ -21,10 +21,25 @@
     </ul>
 </div>
 <div id="wall-people" class="col-xs-6">
-    <ul id="wall">
 
+    <!--<div class="row-fluid">-->
+        <!--<div class="span12">-->
+            <!--<input type="text" name="wall-message" class="form-control inline" placeholder="Post on wall" autofocus>-->
+            <!--<button type="button" class="btn btn-primary btn-block inline" id="post-wall" btn-block>Post</button>-->
+        <!--</div>-->
+    <!--</div>-->
+
+    <ul class="list-group" id="wall">
+        <li class="list-group-item">
+            <input type="text" name="wall-message" class="form-control" placeholder="Post on wall" autofocus>
+            <button type="button" class="btn btn-primary btn-block" id="post-wall">Post</button>
+        </li>
     </ul>
-    <input type="text" name="wall-message" class="form-control" placeholder="Post on wall" autofocus>
-    <button type="button" id="post-wall">Post</button>
+
+    <!--<form class="col-md-6 col-md-offset-6" role="form" action="/message" method="POST">-->
+        <!--<input type="text" name="message" class="form-control input-lg" placeholder="Write Message">-->
+        <!--<br/>-->
+        <!--<button type="submit" class="btn btn-lg btn-primary btn-block">Submit</button>-->
+    <!--</form>-->
 </div>
 <script type="text/javascript" src="/js/people.js"></script>

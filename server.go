@@ -70,8 +70,6 @@ func main() {
 	m.Post("/signup", PostSignup)
 	m.Get("/people", RequireLogin, GetPeople)
 	m.Get("/socket", RequireLogin, GetSocket)
-	m.Get("/wall", RequireLogin, GetWall)
-	m.Post("/message", RequireLogin, PostMessage)
 
 	m.Run()
 
@@ -223,30 +221,6 @@ func PostSignup(ren render.Render, r *http.Request, s sessions.Session) {
 	}
 }
 
-func PostMessage(ren render.Render, r *http.Request, s sessions.Session) {
-	message := r.FormValue("message")
-	userName := s.Get("userName")
-	jsonString := map[string]interface{}{"content": message}
-	body, _ := json.Marshal(jsonString)
-	url := backendUrl + "/message/" + userName.(string)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer res.Body.Close()
-	log.Print(res.StatusCode)
-
-	if res.StatusCode == 201 {
-		ren.Redirect("/wall")
-	}
-
-}
 
 func GetPeople(ren render.Render, user *User) {
 	ren.HTML(200, "people", user)
@@ -322,15 +296,39 @@ func GetSocket(ren render.Render, rw http.ResponseWriter, r *http.Request) {
 		case "chat":
 			temp := req["message"].(map[string]interface{})
 			temp["time"] = time.Now().Format("2006-01-02 15:04")
-			if (len(Wall) == 10) {
-				Wall = append(Wall[1:10], temp)
-			} else {
-				Wall = append(Wall, temp)
-			}
+			Wall = append(Wall, temp)
+			PostWall(temp["sender"].(string), temp["content"].(string), temp["time"].(string))
+//			if (len(Wall) == 10) {
+//				Wall = append(Wall[1:10], temp)
+//			} else {
+//				Wall = append(Wall, temp)
+//			}
 			broadcastMessage(&req)
 		}
 	}
 }
+
+
+func PostWall(name string, content string, time string) {
+	log.Println(time)
+	url := backendUrl + "/message/" + name
+	s := map[string]interface{}{"content":content}
+	body, _ := json.Marshal(s)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 201 {
+	}
+}
+
 
 func UpdatePeopleList() {
 	People = make(map[string]User)
@@ -378,32 +376,28 @@ func PostStatusBack(status float64, name string) {
 	}
 }
 
-func GetWall(ren render.Render, user *User) {
+func UpdateWall() {
 	url := backendUrl + "/messages/wall"
 	req, err := http.Get(url)
 	if err != nil {
 		panic(err)
 	}
 	defer req.Body.Close()
-	decoder := json.NewDecoder(req.Body)
-	var data []Message
-	errDecode := decoder.Decode(&data)
-	if errDecode != nil {
-		panic(errDecode)
+
+	data := []map[string]interface{}{}
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		panic(err)
 	}
-
-	log.Println(data)
-
-	ren.HTML(200, "wall", map[string]interface {}{"user": user, "posts":data})
-}
-
-func UpdateWall() {
-	message := map[string]interface{}{"sender": "xxx", "receiver": "public", "content": "fdafafa", "time": "20:44"}
-	Wall = append(Wall, message)
-	message = map[string]interface{}{"sender": "yyy", "receiver": "public", "content": "adsfadf", "time": "22:22"}
-	Wall = append(Wall, message)
-	message = map[string]interface{}{"sender": "zzz", "receiver": "public", "content": "rfdasfev", "time": "23:23"}
-	Wall = append(Wall, message)
+	json.Unmarshal(body, &data)
+	for _, item := range data {
+//		if i == 10 {
+//			break
+//		}
+		user := item["author"].(map[string]interface{})["userName"]
+		message := map[string]interface{}{"sender": user, "receiver": "public", "content": item["content"], "time": item["postedAt"]}
+		Wall = append(Wall, message)
+	}
 }
 
 func addClient(cc ClientConn) {

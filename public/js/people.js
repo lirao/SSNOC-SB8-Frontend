@@ -147,7 +147,7 @@ function updateWall(messages) {
 
 function postMessage(message) {
     if (message.receiver === "public") {
-        $('#wall').append("<li>"+message.sender+"("+message.time+"): "+message.content+"</li>");
+        $('#wall').children().eq(0).after("<li class=\"list-group-item\">"+message.sender+"("+message.time+"): "+message.content+"</li>");
     }
 }
 
