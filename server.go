@@ -14,6 +14,7 @@ import (
 	"net"
 	"io/ioutil"
 	"strconv"
+	"time"
 )
 
 const backendUrl string = "http://localhost:9000"
@@ -248,7 +249,26 @@ func GetSocket(ren render.Render, rw http.ResponseWriter, r *http.Request) {
 			postReq := res["user"].(map[string]interface{})
 			status, _ := strconv.Atoi(postReq["status"].(string))
 			PostStatusBack(float64(status), postReq["name"].(string))
-			log.Println(People)
+
+			temp2 := map[string]interface{}{}
+			temp2["type"] = "chat"
+			temp2["message"] = map[string]interface{}{}
+			temp3 := temp2["message"].(map[string]interface{})
+			temp3["sender"] = user["name"].(string)
+			temp3["receiver"] = "public"
+			temp3["time"] = time.Now().Format("2006-01-02 15:04")
+			s := postReq["status"].(string)
+			switch s {
+			case "0":
+				s = "<font color=\"green\">I'm OK</font>"
+				case "1":
+			s="<font color=\"yellow\">I need help</font>"
+			case "2":
+			s="<font color=\"red\">Emergency</font>"
+			}
+			temp3["content"] = "Just change the status to " + s
+
+			broadcastMessage(&temp2)
 		case "people":
 			res := map[string]interface{}{}
 			res["type"] = "people"
@@ -260,10 +280,12 @@ func GetSocket(ren render.Render, rw http.ResponseWriter, r *http.Request) {
 			res["messages"] = Wall
 			ws.WriteJSON(&res)
 		case "chat":
+			temp := req["message"].(map[string]interface{})
+			temp["time"] = time.Now().Format("2006-01-02 15:04")
 			if (len(Wall) == 10) {
-				Wall = append(Wall[1:10], req["message"].(map[string]interface{}))
+				Wall = append(Wall[1:10], temp)
 			} else {
-				Wall = append(Wall, req["message"].(map[string]interface{}))
+				Wall = append(Wall, temp)
 			}
 			broadcastMessage(&req)
 		}
@@ -317,11 +339,11 @@ func PostStatusBack(status float64, name string) {
 }
 
 func UpdateWall() {
-	message := map[string]interface{}{"sender": "xxx", "receiver": "public", "content": "fdafafa"}
+	message := map[string]interface{}{"sender": "xxx", "receiver": "public", "content": "fdafafa", "time": "20:44"}
 	Wall = append(Wall, message)
-	message = map[string]interface{}{"sender": "yyy", "receiver": "public", "content": "adsfadf"}
+	message = map[string]interface{}{"sender": "yyy", "receiver": "public", "content": "adsfadf", "time": "22:22"}
 	Wall = append(Wall, message)
-	message = map[string]interface{}{"sender": "zzz", "receiver": "public", "content": "rfdasfev"}
+	message = map[string]interface{}{"sender": "zzz", "receiver": "public", "content": "rfdasfev", "time": "23:23"}
 	Wall = append(Wall, message)
 }
 
