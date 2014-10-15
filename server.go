@@ -310,9 +310,8 @@ func GetSocket(ren render.Render, rw http.ResponseWriter, r *http.Request) {
 
 
 func PostWall(name string, content string, time string) {
-	log.Println(time)
 	url := backendUrl + "/message/" + name
-	s := map[string]interface{}{"content":content}
+	s := map[string]interface{}{"content":content, "postedAt": time}
 	body, _ := json.Marshal(s)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
@@ -357,7 +356,6 @@ func UpdatePeopleList() {
 }
 
 func PostStatusBack(status float64, name string) {
-
 	s := map[string]interface{}{"createdAt":"2009-09-09 09:09", "statusCode":status, "location":"null"}
 	body, _ := json.Marshal(s)
 	url := backendUrl + "/status/" + name
